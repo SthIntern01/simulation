@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - SandBox Security</title>
+    <script src="auth-guard.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f8fafc; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 2rem 0; z-index: 1000; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1); overflow-y: auto; }
+        .logo-section { padding: 0 1.5rem 2rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 1.5rem; }
+        .logo { display: flex; align-items: center; gap: 0.75rem; font-size: 1.3rem; font-weight: 700; }
+        .logo i { font-size: 1.8rem; color: #60a5fa; }
+        .subtitle { font-size: 0.75rem; color: #93c5fd; margin-top: 0.25rem; margin-left: 2.5rem; }
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #e0e7ff; text-decoration: none; transition: all 0.3s ease; border-left: 3px solid transparent; cursor: pointer; }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.1); color: white; border-left-color: #60a5fa; }
+        .nav-link.active { background: rgba(96, 165, 250, 0.2); color: white; border-left-color: #60a5fa; }
+        .nav-link i { width: 20px; text-align: center; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; margin-left: 260px; }
+        .header { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-title { display: flex; align-items: center; gap: 1rem; }
+        .header-title i { font-size: 2rem; color: #2563eb; }
+        .header-title h1 { font-size: 2rem; color: #1e293b; font-weight: 700; }
+        .settings-grid { display: grid; gap: 1.5rem; }
+        .settings-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .settings-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e2e8f0; }
+        .settings-header i { font-size: 1.5rem; color: #2563eb; }
+        .settings-header h2 { font-size: 1.3rem; color: #1e293b; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid #f1f5f9; }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-info { flex: 1; }
+        .setting-label { font-weight: 600; color: #1e293b; margin-bottom: 0.25rem; }
+        .setting-desc { font-size: 0.9rem; color: #64748b; }
+        .toggle-switch { position: relative; width: 52px; height: 28px; }
+        .toggle-switch input { display: none; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #cbd5e1; border-radius: 28px; transition: 0.3s; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background: white; border-radius: 50%; transition: 0.3s; }
+        input:checked + .toggle-slider { background: #2563eb; }
+        input:checked + .toggle-slider:before { transform: translateX(24px); }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155; }
+        .form-input, .form-select { width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .danger-zone { background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 1.5rem; }
+        .danger-zone h3 { color: #991b1b; margin-bottom: 1rem; }
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; animation: slideDown 0.3s ease-out; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .alert-success { background: #a7f3d0; color: #0d5a45; border: 1px solid #5ee7d9; }
+        .alert-error { background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
+        .alert-warning { background: #fef3c7; color: #78350f; border: 1px solid #fcd34d; }
+
+        #alertContainer { position: fixed; top: 20px; left: 260px; right: 20px; z-index: 10000; max-width: calc(100% - 300px); }
+
+        .confirmation-modal { display: none !important; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; visibility: hidden; opacity: 0; }
+        .confirmation-modal.active { display: flex !important; visibility: visible; opacity: 1; }
+        .modal-content { background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .modal-header { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; }
+        .modal-text { color: #64748b; margin-bottom: 1.5rem; }
+        .modal-input { width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 1rem; }
+        .modal-buttons { display: flex; gap: 1rem; }
+        .modal-buttons button { flex: 1; padding: 0.75rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .modal-cancel { background: #e2e8f0; color: #1e293b; }
+        .modal-cancel:hover { background: #cbd5e1; }
+        .modal-confirm { background: #ef4444; color: white; }
+        .modal-confirm:hover { background: #dc2626; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(0); }
+            .container { margin-left: 0; }
+            .mobile-menu-btn { display: flex !important; }
+        }
+        .mobile-menu-btn { display: none; position: fixed; bottom: 2rem; right: 2rem; width: 56px; height: 56px; background: #2563eb; color: white; border: none; border-radius: 50%; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); z-index: 999; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>SandBox Security</span>
+            </div>
+            <div class="subtitle">Phishing Simulation Platform</div>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a class="nav-link" href="dashboard.html">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="campaigns.html">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Campaigns</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="templates.html">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Email Templates</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="users.html">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Target Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="analytics.html">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="reports.html">
+                    <i class="fa-solid fa-file-code"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="training.html">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Training Materials</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="settings.html">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="email-settings.html"><i class="fa-solid fa-envelope"></i> <span>Email Config</span></a></li>
+
+        </ul>
+    </aside>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-title">
+                <i class="fa-solid fa-gear"></i>
+                <h1>Settings</h1>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="settings-grid">
+            <!-- General Settings -->
+            <div class="settings-card">
+                <div class="settings-header">
+                    <i class="fa-solid fa-sliders"></i>
+                    <h2>General Settings</h2>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Platform Name</div>
+                        <div class="setting-desc">Customize your platform branding</div>
+                    </div>
+                    <input type="text" class="form-input" value="SandBox Security" style="max-width: 300px;">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Time Zone</div>
+                        <div class="setting-desc">Set your preferred time zone</div>
+                    </div>
+                    <select class="form-select" style="max-width: 300px;">
+                        <option>UTC (GMT +0:00)</option>
+                        <option selected>IST (GMT +5:30)</option>
+                        <option>EST (GMT -5:00)</option>
+                        <option>PST (GMT -8:00)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="settings-card">
+                <div class="settings-header">
+                    <i class="fa-solid fa-bell"></i>
+                    <h2>Notifications</h2>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Email Notifications</div>
+                        <div class="setting-desc">Receive email alerts for new clicks</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Campaign Alerts</div>
+                        <div class="setting-desc">Get notified when campaigns complete</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Weekly Reports</div>
+                        <div class="setting-desc">Receive weekly summary reports</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="settings-card">
+                <div class="settings-header">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h2>Security</h2>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Two-Factor Authentication</div>
+                        <div class="setting-desc">Add an extra layer of security</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Session Timeout</div>
+                        <div class="setting-desc">Automatically log out after inactivity</div>
+                    </div>
+                    <select class="form-select" style="max-width: 200px;">
+                        <option>15 minutes</option>
+                        <option selected>30 minutes</option>
+                        <option>1 hour</option>
+                        <option>4 hours</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">IP Whitelisting</div>
+                        <div class="setting-desc">Restrict access to specific IP addresses</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- API Settings -->
+            <div class="settings-card">
+                <div class="settings-header">
+                    <i class="fa-solid fa-code"></i>
+                    <h2>API Configuration</h2>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">API Endpoint</label>
+                    <input type="text" class="form-input" value="http://localhost:3000/api" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">API Key</label>
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="password" class="form-input" value="sk_sandbox_1234567890abcdef" readonly>
+                        <button class="btn btn-primary" onclick="regenerateApiKey()">
+                            <i class="fa-solid fa-rotate"></i>
+                            Regenerate
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="settings-card">
+                <div class="settings-header">
+                    <i class="fa-solid fa-database"></i>
+                    <h2>Data Management</h2>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Data Retention Period</div>
+                        <div class="setting-desc">How long to keep click data</div>
+                    </div>
+                    <select class="form-select" style="max-width: 200px;">
+                        <option>30 days</option>
+                        <option>90 days</option>
+                        <option selected>1 year</option>
+                        <option>Forever</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto-Backup</div>
+                        <div class="setting-desc">Automatically backup database</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="exportAllData()">
+                        <i class="fa-solid fa-download"></i>
+                        Export All Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="settings-card">
+                <div class="danger-zone">
+                    <h3><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h3>
+                    <p style="color: #991b1b; margin-bottom: 1rem;">These actions are irreversible. Please proceed with caution.</p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-danger" onclick="openClearDataModal()">
+                            <i class="fa-solid fa-trash"></i>
+                            Clear All Click Data
+                        </button>
+                        <button class="btn btn-danger" onclick="openResetPlatformModal()">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            Reset Platform
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; padding: 2rem;">
+                <button class="btn btn-primary" style="min-width: 200px;" onclick="saveSettings()">
+                    <i class="fa-solid fa-save"></i>
+                    Save All Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal for Clear Data -->
+    <div class="confirmation-modal" id="clearDataModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fa-solid fa-triangle-exclamation"></i> Clear All Click Data
+            </div>
+            <div class="modal-text">
+                <p>This action will permanently delete ALL click data from the database.</p>
+                <p><strong>This cannot be undone!</strong></p>
+                <p style="margin-top: 1rem;">Type <strong>"DELETE ALL"</strong> below to confirm:</p>
+            </div>
+            <input type="text" class="modal-input" id="clearDataConfirm" placeholder="Type 'DELETE ALL' to confirm">
+            <div class="modal-buttons">
+                <button class="modal-cancel" onclick="closeClearDataModal()">Cancel</button>
+                <button class="modal-confirm" onclick="confirmClearData()">Delete All Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal for Reset Platform -->
+    <div class="confirmation-modal" id="resetPlatformModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fa-solid fa-triangle-exclamation"></i> Reset Platform
+            </div>
+            <div class="modal-text">
+                <p>This action will reset the entire platform to factory settings.</p>
+                <p><strong>All campaigns, templates, users, and settings will be deleted!</strong></p>
+                <p style="margin-top: 1rem;">Type <strong>"RESET PLATFORM"</strong> below to confirm:</p>
+            </div>
+            <input type="text" class="modal-input" id="resetPlatformConfirm" placeholder="Type 'RESET PLATFORM' to confirm">
+            <div class="modal-buttons">
+                <button class="modal-cancel" onclick="closeResetPlatformModal()">Cancel</button>
+                <button class="modal-confirm" onclick="confirmResetPlatform()">Reset Platform</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fa-solid fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'warning-circle'}"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        function saveSettings() {
+            showAlert('✅ Settings saved successfully!', 'success');
+        }
+
+        function regenerateApiKey() {
+            if (confirm('Are you sure you want to regenerate the API key? This will invalidate the current key.')) {
+                const newKey = 'sk_sandbox_' + Math.random().toString(36).substring(2, 15);
+                showAlert('✅ New API Key generated: ' + newKey, 'success');
+            }
+        }
+
+        async function exportAllData() {
+            showAlert('📥 Exporting all data... This will download a complete backup.', 'info');
+            
+            try {
+                // Fetch all data from API
+                const [campaigns, templates, employees, clicks] = await Promise.all([
+                    fetch('/api/campaigns').then(r => r.json()),
+                    fetch('/api/templates').then(r => r.json()),
+                    fetch('/api/employees').then(r => r.json()),
+                    fetch('/api/clicks').then(r => r.json())
+                ]);
+
+                // Create backup object
+                const backup = {
+                    exportDate: new Date().toISOString(),
+                    version: '1.0',
+                    data: {
+                        campaigns: campaigns || [],
+                        templates: templates || [],
+                        employees: employees || [],
+                        clicks: clicks || []
+                    },
+                    summary: {
+                        totalCampaigns: (campaigns || []).length,
+                        totalTemplates: (templates || []).length,
+                        totalEmployees: (employees || []).length,
+                        totalClicks: (clicks || []).length
+                    }
+                };
+
+                // Create JSON file and download
+                const json = JSON.stringify(backup, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `sandbox-security-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+
+                showAlert(`✅ Backup exported successfully! (${backup.summary.totalCampaigns} campaigns, ${backup.summary.totalTemplates} templates, ${backup.summary.totalEmployees} employees, ${backup.summary.totalClicks} clicks)`, 'success');
+            } catch (error) {
+                showAlert('❌ Error exporting data: ' + error.message, 'error');
+            }
+        }
+
+        // Clear Data Modal Functions
+        function openClearDataModal() {
+            document.getElementById('clearDataModal').classList.add('active');
+        }
+
+        function closeClearDataModal() {
+            document.getElementById('clearDataModal').classList.remove('active');
+            document.getElementById('clearDataConfirm').value = '';
+        }
+
+        async function confirmClearData() {
+            const input = document.getElementById('clearDataConfirm').value;
+            if (input !== 'DELETE ALL') {
+                showAlert('❌ Incorrect confirmation text. Please type "DELETE ALL" exactly.', 'error');
+                return;
+            }
+
+            try {
+                // Call API to delete all clicks
+                const response = await fetch('/api/clicks', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    closeClearDataModal();
+                    showAlert('✅ All click data has been permanently deleted.', 'success');
+                } else {
+                    showAlert('❌ Error deleting data. Please try again.', 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // Reset Platform Modal Functions
+        function openResetPlatformModal() {
+            document.getElementById('resetPlatformModal').classList.add('active');
+        }
+
+        function closeResetPlatformModal() {
+            document.getElementById('resetPlatformModal').classList.remove('active');
+            document.getElementById('resetPlatformConfirm').value = '';
+        }
+
+        async function confirmResetPlatform() {
+            const input = document.getElementById('resetPlatformConfirm').value;
+            if (input !== 'RESET PLATFORM') {
+                showAlert('❌ Incorrect confirmation text. Please type "RESET PLATFORM" exactly.', 'error');
+                return;
+            }
+
+            try {
+                // Call API endpoints to reset platform data
+                const endpoints = ['/api/campaigns', '/api/templates', '/api/employees', '/api/clicks'];
+                
+                for (const endpoint of endpoints) {
+                    await fetch(endpoint, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+
+                closeResetPlatformModal();
+                showAlert('✅ Platform has been reset to factory settings. Redirecting to dashboard...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+            } catch (error) {
+                showAlert('❌ Error resetting platform: ' + error.message, 'error');
+            }
+        }
+
+        // Close modals when clicking outside
+        document.getElementById('clearDataModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeClearDataModal();
+            }
+        });
+
+        document.getElementById('resetPlatformModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeResetPlatformModal();
+            }
+        });
+    </script>
+</body>
+</html>

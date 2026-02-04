@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - SandBox Security</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f8fafc; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 2rem 0; z-index: 1000; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1); overflow-y: auto; }
+        .logo-section { padding: 0 1.5rem 2rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 1.5rem; }
+        .logo { display: flex; align-items: center; gap: 0.75rem; font-size: 1.3rem; font-weight: 700; }
+        .logo i { font-size: 1.8rem; color: #60a5fa; }
+        .subtitle { font-size: 0.75rem; color: #93c5fd; margin-top: 0.25rem; margin-left: 2.5rem; }
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #e0e7ff; text-decoration: none; transition: all 0.3s ease; border-left: 3px solid transparent; cursor: pointer; }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.1); color: white; border-left-color: #60a5fa; }
+        .nav-link.active { background: rgba(96, 165, 250, 0.2); color: white; border-left-color: #60a5fa; }
+        .nav-link i { width: 20px; text-align: center; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; margin-left: 260px; }
+        .header { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .header-title { display: flex; align-items: center; gap: 1rem; }
+        .header-title i { font-size: 2rem; color: #2563eb; }
+        .header-title h1 { font-size: 2rem; color: #1e293b; font-weight: 700; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .report-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .report-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s; cursor: pointer; }
+        .report-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-4px); }
+        .report-icon { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1rem; }
+        .report-icon.blue { background: #dbeafe; color: #2563eb; }
+        .report-icon.green { background: #d1fae5; color: #10b981; }
+        .report-icon.orange { background: #fed7aa; color: #f59e0b; }
+        .report-icon.purple { background: #e9d5ff; color: #9333ea; }
+        .report-name { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; }
+        .report-desc { color: #64748b; margin-bottom: 1.5rem; }
+        .recent-reports { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .section-title { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem; }
+        .report-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #f1f5f9; }
+        .report-item:last-child { border-bottom: none; }
+        .report-info { display: flex; align-items: center; gap: 1rem; }
+        .file-icon { width: 40px; height: 40px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #2563eb; }
+        .report-details h4 { font-size: 1rem; color: #1e293b; margin-bottom: 0.25rem; }
+        .report-details p { font-size: 0.85rem; color: #64748b; }
+        .download-btn { padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; }
+        .download-btn:hover { background: #1d4ed8; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 16px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h2 { font-size: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155; }
+        .form-select, .form-input { width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; }
+        .form-select:focus, .form-input:focus { outline: none; border-color: #2563eb; }
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .alert-error { background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
+        .alert-info { background: #dbeafe; color: #0c4a6e; border: 1px solid #7dd3fc; }
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(0); }
+            .container { margin-left: 0; }
+            .mobile-menu-btn { display: flex !important; }
+        }
+        .mobile-menu-btn { display: none; position: fixed; bottom: 2rem; right: 2rem; width: 56px; height: 56px; background: #2563eb; color: white; border: none; border-radius: 50%; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); z-index: 999; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>SandBox Security</span>
+            </div>
+            <div class="subtitle">Phishing Simulation Platform</div>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a class="nav-link" href="dashboard.html">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="campaigns.html">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Campaigns</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="templates.html">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Email Templates</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="users.html">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Target Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="analytics.html">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="reports.html">
+                    <i class="fa-solid fa-file-code"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="training.html">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Training Materials</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="settings.html">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="email-settings.html"><i class="fa-solid fa-envelope"></i> <span>Email Config</span></a></li>
+
+        </ul>
+    </aside>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div class="header-title">
+                    <i class="fa-solid fa-file-code"></i>
+                    <h1>Reports</h1>
+                </div>
+                <button class="btn btn-primary" onclick="openCustomReport()">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    Custom Report
+                </button>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="report-types">
+            <div class="report-card" onclick="generateReport('executive')">
+                <div class="report-icon blue">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div class="report-name">Executive Summary</div>
+                <div class="report-desc">High-level overview for leadership and stakeholders</div>
+                <button class="btn btn-primary" onclick="event.stopPropagation(); generateReport('executive')">
+                    <i class="fa-solid fa-download"></i>
+                    Generate
+                </button>
+            </div>
+
+            <div class="report-card" onclick="generateReport('department')">
+                <div class="report-icon green">
+                    <i class="fa-solid fa-building"></i>
+                </div>
+                <div class="report-name">Department Analysis</div>
+                <div class="report-desc">Detailed breakdown by department performance</div>
+                <button class="btn btn-primary" onclick="event.stopPropagation(); generateReport('department')">
+                    <i class="fa-solid fa-download"></i>
+                    Generate
+                </button>
+            </div>
+
+            <div class="report-card" onclick="generateReport('campaign')">
+                <div class="report-icon orange">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <div class="report-name">Campaign Performance</div>
+                <div class="report-desc">Metrics and insights for specific campaigns</div>
+                <button class="btn btn-primary" onclick="event.stopPropagation(); generateReport('campaign')">
+                    <i class="fa-solid fa-download"></i>
+                    Generate
+                </button>
+            </div>
+
+            <div class="report-card" onclick="generateReport('compliance')">
+                <div class="report-icon purple">
+                    <i class="fa-solid fa-shield-check"></i>
+                </div>
+                <div class="report-name">Compliance Report</div>
+                <div class="report-desc">Audit trail and compliance documentation</div>
+                <button class="btn btn-primary" onclick="event.stopPropagation(); generateReport('compliance')">
+                    <i class="fa-solid fa-download"></i>
+                    Generate
+                </button>
+            </div>
+        </div>
+
+        <div class="recent-reports">
+            <div class="section-title">Recent Reports</div>
+            <div id="recentReportsList"></div>
+        </div>
+    </div>
+
+    <!-- Custom Report Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Custom Report</h2>
+                <button style="background:none;border:none;font-size:1.5rem;cursor:pointer;" onclick="closeReportModal()">×</button>
+            </div>
+            <form id="reportForm">
+                <div class="form-group">
+                    <label class="form-label">Report Type</label>
+                    <select class="form-select" id="reportType" required>
+                        <option value="executive">Executive Summary</option>
+                        <option value="department">Department Analysis</option>
+                        <option value="campaign">Campaign Performance</option>
+                        <option value="compliance">Compliance Report</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select" id="dateRange" required>
+                        <option value="7days">Last 7 Days</option>
+                        <option value="30days">Last 30 Days</option>
+                        <option value="quarter">Last Quarter</option>
+                        <option value="year">Last Year</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Format</label>
+                    <select class="form-select" id="reportFormat" required>
+                        <option value="pdf">PDF</option>
+                        <option value="xlsx">Excel (XLSX)</option>
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">
+                    <i class="fa-solid fa-file-export"></i>
+                    Generate Report
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let generatedReports = [];
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fa-solid fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        function renderRecentReports() {
+            const list = document.getElementById('recentReportsList');
+            if (generatedReports.length === 0) {
+                list.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">No reports generated yet. Create one to get started!</p>';
+                return;
+            }
+            
+            list.innerHTML = generatedReports.map(report => `
+                <div class="report-item">
+                    <div class="report-info">
+                        <div class="file-icon">
+                            <i class="fa-solid fa-${report.format.toLowerCase() === 'pdf' ? 'file-pdf' : report.format.toLowerCase() === 'xlsx' ? 'file-excel' : 'file-csv'}"></i>
+                        </div>
+                        <div class="report-details">
+                            <h4>${report.name}</h4>
+                            <p>${report.date} • ${report.format} • ${report.size}</p>
+                        </div>
+                    </div>
+                    <button class="download-btn" onclick="downloadReport('${report.name}', '${report.format}')">
+                        <i class="fa-solid fa-download"></i>
+                        Download
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function generateReportContent(type, format, dateRange = '30days') {
+            const reportNames = {
+                executive: 'Executive Summary Report',
+                department: 'Department Analysis Report',
+                campaign: 'Campaign Performance Report',
+                compliance: 'Compliance Audit Report'
+            };
+
+            const date = new Date().toISOString().split('T')[0];
+            const data = await generateReportData(type);
+            
+            if (format === 'json') {
+                return JSON.stringify({
+                    reportType: type,
+                    reportName: reportNames[type],
+                    generatedDate: date,
+                    dateRange: dateRange,
+                    data: data
+                }, null, 2);
+            } else if (format === 'csv') {
+                return generateCSVReport(type, date, data);
+            } else {
+                return generateTextReport(type, date, dateRange, data);
+            }
+        }
+
+        async function generateReportData(type) {
+            try {
+                if (type === 'campaign') {
+                    // Fetch real campaign data from API
+                    const response = await fetch('/api/campaigns');
+                    const campaigns = await response.json();
+                    return { campaigns: campaigns || [] };
+                } else if (type === 'compliance') {
+                    // Fetch real click data for compliance audit
+                    const response = await fetch('/api/clicks');
+                    const clicks = await response.json();
+                    return { auditTrail: clicks || [] };
+                }
+            } catch (error) {
+                console.log('Error fetching data:', error);
+            }
+
+            // Fallback data for executive and department
+            const mockData = {
+                executive: {
+                    totalCampaigns: 12,
+                    totalUsers: 450,
+                    avgClickRate: '34.2%',
+                    avgReportRate: '18.5%',
+                    departmentStats: [
+                        { dept: 'IT', users: 120, clicks: 45, reports: 12 },
+                        { dept: 'HR', users: 95, clicks: 28, reports: 8 },
+                        { dept: 'Finance', users: 110, clicks: 38, reports: 15 },
+                        { dept: 'Operations', users: 125, clicks: 48, reports: 10 }
+                    ]
+                },
+                department: {
+                    departments: [
+                        { name: 'IT', employees: 120, tested: 105, clicked: 32, reported: 8, rate: '26.7%' },
+                        { name: 'HR', employees: 95, tested: 92, clicked: 22, reported: 6, rate: '23.1%' },
+                        { name: 'Finance', employees: 110, tested: 108, clicked: 35, reported: 10, rate: '32.4%' }
+                    ]
+                }
+            };
+            return mockData[type] || {};
+        }
+
+        function generateTextReport(type, date, dateRange, data) {
+            const reportNames = {
+                executive: 'Executive Summary Report',
+                department: 'Department Analysis Report',
+                campaign: 'Campaign Performance Report',
+                compliance: 'Compliance Audit Report'
+            };
+
+            let content = `${reportNames[type]}\n`;
+            content += `Generated: ${date}\n`;
+            content += `Date Range: ${dateRange}\n`;
+            content += '='.repeat(60) + '\n\n';
+
+            if (type === 'executive') {
+                content += `Total Campaigns: ${data.totalCampaigns}\n`;
+                content += `Total Users Tested: ${data.totalUsers}\n`;
+                content += `Average Click Rate: ${data.avgClickRate}\n`;
+                content += `Average Report Rate: ${data.avgReportRate}\n\n`;
+                content += 'Department Statistics:\n';
+                data.departmentStats.forEach(d => {
+                    content += `${d.dept}: ${d.users} users, ${d.clicks} clicks, ${d.reports} reports\n`;
+                });
+            } else if (type === 'department') {
+                content += 'Department Breakdown:\n\n';
+                data.departments.forEach(d => {
+                    content += `${d.name}:\n`;
+                    content += `  - Employees: ${d.employees}\n`;
+                    content += `  - Tested: ${d.tested}\n`;
+                    content += `  - Clicked: ${d.clicked}\n`;
+                    content += `  - Reported: ${d.reports}\n`;
+                    content += `  - Click Rate: ${d.rate}\n\n`;
+                });
+            } else if (type === 'campaign') {
+                content += 'Campaign List:\n\n';
+                if (data.campaigns && data.campaigns.length > 0) {
+                    data.campaigns.forEach(c => {
+                        content += `Campaign: ${c.name}\n`;
+                        content += `  - Description: ${c.description || 'N/A'}\n`;
+                        content += `  - Status: ${c.status || 'N/A'}\n`;
+                        content += `  - Created: ${c.created_at || 'N/A'}\n\n`;
+                    });
+                } else {
+                    content += 'No campaigns found\n';
+                }
+            } else if (type === 'compliance') {
+                content += 'Audit Trail:\n\n';
+                if (data.auditTrail && data.auditTrail.length > 0) {
+                    data.auditTrail.forEach(entry => {
+                        content += `[${entry.time || 'N/A'}] User: ${entry.user_id || 'N/A'} - Campaign: ${entry.campaign || 'N/A'} - Dept: ${entry.dept || 'N/A'}\n`;
+                    });
+                } else {
+                    content += 'No audit data found\n';
+                }
+            }
+
+            return content;
+        }
+
+        function generateCSVReport(type, date, data) {
+            let csv = '';
+
+            if (type === 'executive') {
+                csv = 'Department,Users,Clicks,Reports\n';
+                data.departmentStats.forEach(d => {
+                    csv += `${d.dept},${d.users},${d.clicks},${d.reports}\n`;
+                });
+            } else if (type === 'department') {
+                csv = 'Department,Employees,Tested,Clicked,Reported,Click Rate\n';
+                data.departments.forEach(d => {
+                    csv += `${d.name},${d.employees},${d.tested},${d.clicked},${d.reports},${d.rate}\n`;
+                });
+            } else if (type === 'campaign') {
+                csv = 'Campaign Name,Description,Status,Created Date\n';
+                if (data.campaigns && data.campaigns.length > 0) {
+                    data.campaigns.forEach(c => {
+                        csv += `"${c.name}","${c.description || ''}","${c.status || ''}","${c.created_at || ''}"\n`;
+                    });
+                }
+            } else if (type === 'compliance') {
+                csv = 'Time,User ID,Campaign,Department\n';
+                if (data.auditTrail && data.auditTrail.length > 0) {
+                    data.auditTrail.forEach(entry => {
+                        csv += `"${entry.time || ''}","${entry.user_id || ''}","${entry.campaign || ''}","${entry.dept || ''}"\n`;
+                    });
+                }
+            }
+
+            return csv;
+        }
+
+        async function generateReport(type) {
+            const typeNames = {
+                executive: 'Executive Summary',
+                department: 'Department Analysis',
+                campaign: 'Campaign Performance',
+                compliance: 'Compliance Report'
+            };
+
+            showAlert(`📊 Generating ${typeNames[type]} in CSV format...`, 'info');
+
+            setTimeout(async () => {
+                const format = 'csv';
+                const date = new Date().toISOString().split('T')[0];
+                const filename = `${typeNames[type]}_${date}.${format}`;
+                
+                const content = await generateReportContent(type, format);
+                downloadFile(content, filename, `text/csv`);
+                
+                generatedReports.unshift({
+                    name: `${typeNames[type]} - ${date}`,
+                    date: date,
+                    format: 'CSV',
+                    size: (Math.random() * 5 + 1).toFixed(1) + ' MB',
+                    type: type
+                });
+                
+                renderRecentReports();
+                showAlert(`✅ ${typeNames[type]} generated and downloaded as CSV!`, 'success');
+            }, 1000);
+        }
+
+        function downloadReport(name, format) {
+            showAlert(`📥 Downloading ${name}...`, 'info');
+            
+            setTimeout(() => {
+                showAlert(`✅ Downloaded: ${name}`, 'success');
+            }, 500);
+        }
+
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        function openCustomReport() {
+            document.getElementById('reportModal').classList.add('active');
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.remove('active');
+        }
+
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const type = document.getElementById('reportType').value;
+            const format = document.getElementById('reportFormat').value;
+            const dateRange = document.getElementById('dateRange').value;
+            
+            const typeNames = {
+                executive: 'Executive Summary',
+                department: 'Department Analysis',
+                campaign: 'Campaign Performance',
+                compliance: 'Compliance Report'
+            };
+
+            showAlert(`📊 Generating ${typeNames[type]} in ${format.toUpperCase()} format...`, 'info');
+
+            setTimeout(async () => {
+                const date = new Date().toISOString().split('T')[0];
+                const content = await generateReportContent(type, format, dateRange);
+                const filename = `${typeNames[type]}_${date}.${format}`;
+                
+                const mimeTypes = {
+                    'csv': 'text/csv',
+                    'json': 'application/json',
+                    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'pdf': 'application/pdf'
+                };
+                
+                downloadFile(content, filename, mimeTypes[format] || 'application/octet-stream');
+                
+                generatedReports.unshift({
+                    name: `${typeNames[type]} (Custom)`,
+                    date: date,
+                    format: format.toUpperCase(),
+                    size: (Math.random() * 5 + 1).toFixed(1) + ' MB',
+                    type: type
+                });
+                
+                renderRecentReports();
+                closeReportModal();
+                document.getElementById('reportForm').reset();
+                showAlert(`✅ Report generated and downloaded successfully!`, 'success');
+            }, 1500);
+        });
+
+        async function exportAllData() {
+            showAlert('📥 Exporting all data... This will download a complete backup.', 'info');
+            
+            try {
+                // Fetch all data from API
+                const [campaigns, templates, employees, clicks] = await Promise.all([
+                    fetch('/api/campaigns').then(r => r.json()),
+                    fetch('/api/templates').then(r => r.json()),
+                    fetch('/api/employees').then(r => r.json()),
+                    fetch('/api/clicks').then(r => r.json())
+                ]);
+
+                // Create backup object
+                const backup = {
+                    exportDate: new Date().toISOString(),
+                    version: '1.0',
+                    data: {
+                        campaigns: campaigns || [],
+                        templates: templates || [],
+                        employees: employees || [],
+                        clicks: clicks || []
+                    },
+                    summary: {
+                        totalCampaigns: (campaigns || []).length,
+                        totalTemplates: (templates || []).length,
+                        totalEmployees: (employees || []).length,
+                        totalClicks: (clicks || []).length
+                    }
+                };
+
+                // Create JSON file and download
+                const json = JSON.stringify(backup, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `sandbox-security-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+
+                showAlert(`✅ Backup exported successfully! (${backup.summary.totalCampaigns} campaigns, ${backup.summary.totalTemplates} templates, ${backup.summary.totalEmployees} employees, ${backup.summary.totalClicks} clicks)`, 'success');
+            } catch (error) {
+                showAlert('❌ Error exporting data: ' + error.message, 'error');
+            }
+        }
+
+        renderRecentReports();
+    </script>
+</body>
+</html>

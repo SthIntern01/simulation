@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Management - SandBox Security</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f8fafc; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 2rem 0; z-index: 1000; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1); overflow-y: auto; }
+        .logo-section { padding: 0 1.5rem 2rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 1.5rem; }
+        .logo { display: flex; align-items: center; gap: 0.75rem; font-size: 1.3rem; font-weight: 700; }
+        .logo i { font-size: 1.8rem; color: #60a5fa; }
+        .subtitle { font-size: 0.75rem; color: #93c5fd; margin-top: 0.25rem; margin-left: 2.5rem; }
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #e0e7ff; text-decoration: none; transition: all 0.3s ease; border-left: 3px solid transparent; }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.1); color: white; border-left-color: #60a5fa; }
+        .nav-link.active { background: rgba(96, 165, 250, 0.2); color: white; border-left-color: #60a5fa; }
+        .nav-link i { width: 20px; text-align: center; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; margin-left: 260px; }
+        .header { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .header-title { display: flex; align-items: center; gap: 1rem; }
+        .header-title i { font-size: 2rem; color: #2563eb; }
+        .header-title h1 { font-size: 2rem; color: #1e293b; font-weight: 700; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #2563eb; }
+        .stat-card:nth-child(2) { border-left-color: #10b981; }
+        .stat-card:nth-child(3) { border-left-color: #f59e0b; }
+        .stat-card:nth-child(4) { border-left-color: #ef4444; }
+        .stat-label { font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: #1e293b; }
+        .campaigns-grid { display: grid; gap: 1.5rem; }
+        .campaign-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .campaign-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-2px); }
+        .campaign-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem; }
+        .campaign-name { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+        .status-badge { padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-paused { background: #fef3c7; color: #92400e; }
+        .status-completed { background: #e0e7ff; color: #3730a3; }
+        .campaign-description { color: #64748b; margin-bottom: 1.5rem; line-height: 1.6; }
+        .campaign-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .meta-item { display: flex; align-items: center; gap: 0.5rem; color: #475569; }
+        .meta-item i { color: #2563eb; }
+        .campaign-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 16px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h2 { font-size: 1.5rem; color: #1e293b; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; color: #64748b; cursor: pointer; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155; }
+        .form-input, .form-textarea, .form-select { width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; }
+        .form-input:focus, .form-textarea:focus, .form-select:focus { outline: none; border-color: #2563eb; }
+        .form-textarea { min-height: 100px; resize: vertical; }
+        .empty-state { text-align: center; padding: 4rem 2rem; }
+        .empty-state i { font-size: 4rem; color: #cbd5e1; margin-bottom: 1rem; }
+        .empty-state h3 { font-size: 1.5rem; color: #475569; margin-bottom: 0.5rem; }
+        .empty-state p { color: #64748b; }
+        
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+            .sidebar.active { transform: translateX(0); }
+            .container { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo"><i class="fa-solid fa-shield-halved"></i><span>SandBox Security</span></div>
+            <div class="subtitle">Phishing Simulation Platform</div>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="fa-solid fa-chart-line"></i><span>Dashboard</span></a></li>
+            <li class="nav-item"><a class="nav-link active" href="campaigns.html"><i class="fa-solid fa-bullhorn"></i><span>Campaigns</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="templates.html"><i class="fa-solid fa-envelope"></i><span>Email Templates</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="users.html"><i class="fa-solid fa-users"></i><span>Target Users</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="analytics.html"><i class="fa-solid fa-chart-pie"></i><span>Analytics</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="reports.html"><i class="fa-solid fa-file-code"></i><span>Reports</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="training.html"><i class="fa-solid fa-graduation-cap"></i><span>Training Materials</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="settings.html"><i class="fa-solid fa-gear"></i><span>Settings</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="email-settings.html"><i class="fa-solid fa-envelope"></i> <span>Email Config</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div class="header-title">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <h1>Campaign Management</h1>
+                </div>
+                <button class="btn btn-primary" onclick="openCreateCampaign()">
+                    <i class="fa-solid fa-plus"></i>
+                    Create Campaign
+                </button>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Campaigns</div>
+                <div class="stat-value" id="totalCampaigns">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Campaigns</div>
+                <div class="stat-value" id="activeCampaigns">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Clicks</div>
+                <div class="stat-value" id="totalClicks">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Completion Rate</div>
+                <div class="stat-value" id="completionRate">0%</div>
+            </div>
+        </div>
+
+        <div id="campaignsList" class="campaigns-grid"></div>
+    </div>
+
+    <!-- Create/Edit Campaign Modal -->
+    <div id="campaignModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Create Campaign</h2>
+                <button class="close-btn" onclick="closeCampaignModal()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <form id="campaignForm">
+                <input type="hidden" id="campaignId">
+                <div class="form-group">
+                    <label class="form-label">Campaign Name</label>
+                    <input type="text" class="form-input" id="campaignName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="campaignDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="campaignStatus">
+                        <option value="active">Active</option>
+                        <option value="paused">Paused</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fa-solid fa-save"></i>
+                    Save Campaign
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let campaigns = [];
+
+        async function loadCampaigns() {
+            try {
+                const response = await fetch('/api/campaigns');
+                campaigns = await response.json();
+                renderCampaigns();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading campaigns:', error);
+            }
+        }
+
+        async function updateStats() {
+            try {
+                const clicksResponse = await fetch('/api/clicks');
+                const clicks = await clicksResponse.json();
+                
+                document.getElementById('totalCampaigns').textContent = campaigns.length;
+                document.getElementById('activeCampaigns').textContent = campaigns.filter(c => c.status === 'active').length;
+                document.getElementById('totalClicks').textContent = clicks.length;
+                
+                const uniqueCampaigns = new Set(clicks.map(c => c.campaign));
+                const rate = campaigns.length > 0 ? Math.round((uniqueCampaigns.size / campaigns.length) * 100) : 0;
+                document.getElementById('completionRate').textContent = rate + '%';
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        function renderCampaigns() {
+            const container = document.getElementById('campaignsList');
+            
+            if (campaigns.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-bullhorn"></i>
+                        <h3>No Campaigns Yet</h3>
+                        <p>Create your first phishing simulation campaign to get started.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = campaigns.map(campaign => `
+                <div class="campaign-card">
+                    <div class="campaign-header">
+                        <div class="campaign-name">${campaign.name}</div>
+                        <span class="status-badge status-${campaign.status}">
+                            ${campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                        </span>
+                    </div>
+                    <div class="campaign-description">${campaign.description || 'No description'}</div>
+                    <div class="campaign-meta">
+                        <div class="meta-item">
+                            <i class="fa-solid fa-calendar"></i>
+                            <span>${new Date(campaign.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>Campaign ID: ${campaign.id}</span>
+                        </div>
+                    </div>
+                    <div class="campaign-actions">
+                        <button class="btn btn-primary" onclick="editCampaign(${campaign.id})">
+                            <i class="fa-solid fa-edit"></i>
+                            Edit
+                        </button>
+                        <button class="btn btn-success" onclick="viewCampaignStats(${campaign.id})">
+                            <i class="fa-solid fa-chart-bar"></i>
+                            View Stats
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteCampaign(${campaign.id})">
+                            <i class="fa-solid fa-trash"></i>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openCreateCampaign() {
+            document.getElementById('modalTitle').textContent = 'Create Campaign';
+            document.getElementById('campaignForm').reset();
+            document.getElementById('campaignId').value = '';
+            document.getElementById('campaignModal').classList.add('active');
+        }
+
+        function closeCampaignModal() {
+            document.getElementById('campaignModal').classList.remove('active');
+        }
+
+        async function editCampaign(id) {
+            const campaign = campaigns.find(c => c.id === id);
+            if (!campaign) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Campaign';
+            document.getElementById('campaignId').value = campaign.id;
+            document.getElementById('campaignName').value = campaign.name;
+            document.getElementById('campaignDescription').value = campaign.description || '';
+            document.getElementById('campaignStatus').value = campaign.status;
+            document.getElementById('campaignModal').classList.add('active');
+        }
+
+        async function deleteCampaign(id) {
+            if (!confirm('Are you sure you want to delete this campaign?')) return;
+
+            try {
+                await fetch(`/api/campaigns/${id}`, { method: 'DELETE' });
+                loadCampaigns();
+            } catch (error) {
+                console.error('Error deleting campaign:', error);
+                alert('Error deleting campaign');
+            }
+        }
+
+        function viewCampaignStats(id) {
+            window.location.href = `dashboard.html?campaign=${id}`;
+        }
+
+        document.getElementById('campaignForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('campaignId').value;
+            const data = {
+                name: document.getElementById('campaignName').value,
+                description: document.getElementById('campaignDescription').value,
+                status: document.getElementById('campaignStatus').value
+            };
+
+            try {
+                if (id) {
+                    await fetch(`/api/campaigns/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    await fetch('/api/campaigns', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                }
+                
+                closeCampaignModal();
+                loadCampaigns();
+            } catch (error) {
+                console.error('Error saving campaign:', error);
+                alert('Error saving campaign');
+            }
+        });
+
+        loadCampaigns();
+    </script>
+</body>
+</html>

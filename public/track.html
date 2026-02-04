@@ -1,0 +1,47 @@
+<script>
+(async () => {
+    try {
+        const params = new URLSearchParams(location.search);
+        let ip = 'unknown';
+        
+        // Try to get IP address from external API
+        try {
+            const ipResponse = await fetch("https://api.ipify.org?format=json", { timeout: 5000 });
+            if (ipResponse.ok) {
+                const ipData = await ipResponse.json();
+                ip = ipData.ip || 'unknown';
+            }
+        } catch (ipError) {
+            console.log('Could not fetch IP, using default:', ipError);
+        }
+
+        const data = {
+            user_id: params.get("id"),
+            dept: params.get("dept"),
+            campaign: params.get("camp"),
+            ip: ip,
+            user_agent: navigator.userAgent,
+            time: new Date().toUTCString()
+        };
+
+        console.log('Tracking data:', data);
+        
+        const logResponse = await fetch("/log", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(data)
+        });
+        
+        console.log('Log response:', logResponse.status);
+        
+        // Redirect after a short delay to ensure log is recorded
+        setTimeout(() => {
+            location.href = "https://tinubu.com";
+        }, 500);
+    } catch (error) {
+        console.error('Tracking error:', error);
+        // Still redirect even if tracking fails
+        location.href = "https://tinubu.com";
+    }
+})();
+</script>

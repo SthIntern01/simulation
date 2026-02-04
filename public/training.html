@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Materials - SandBox Security</title>
+    <script src="auth-guard.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f8fafc; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 2rem 0; z-index: 1000; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1); overflow-y: auto; }
+        .logo-section { padding: 0 1.5rem 2rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 1.5rem; }
+        .logo { display: flex; align-items: center; gap: 0.75rem; font-size: 1.3rem; font-weight: 700; }
+        .logo i { font-size: 1.8rem; color: #60a5fa; }
+        .subtitle { font-size: 0.75rem; color: #93c5fd; margin-top: 0.25rem; margin-left: 2.5rem; }
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #e0e7ff; text-decoration: none; transition: all 0.3s ease; border-left: 3px solid transparent; cursor: pointer; }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.1); color: white; border-left-color: #60a5fa; }
+        .nav-link.active { background: rgba(96, 165, 250, 0.2); color: white; border-left-color: #60a5fa; }
+        .nav-link i { width: 20px; text-align: center; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; margin-left: 260px; }
+        .header { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-title { display: flex; align-items: center; gap: 1rem; }
+        .header-title i { font-size: 2rem; color: #2563eb; }
+        .header-title h1 { font-size: 2rem; color: #1e293b; font-weight: 700; }
+        .tabs { display: flex; gap: 1rem; margin-top: 1.5rem; border-bottom: 2px solid #e2e8f0; }
+        .tab { padding: 1rem 1.5rem; border: none; background: none; font-weight: 600; color: #64748b; cursor: pointer; position: relative; }
+        .tab.active { color: #2563eb; }
+        .tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: #2563eb; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; margin-top: 2rem; filter: blur(4px); pointer-events: none; }
+        .course-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .coming-soon-overlay { position: relative; width: 100%; padding: 4rem 2rem; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; margin-top: 2rem; }
+        .coming-soon-icon { font-size: 4rem; color: #2563eb; margin-bottom: 1rem; }
+        .coming-soon-title { font-size: 2rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; }
+        .coming-soon-text { font-size: 1.1rem; color: #64748b; margin-bottom: 1rem; }
+        .coming-soon-subtitle { font-size: 0.95rem; color: #94a3b8; }
+        .course-image { height: 180px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem; }
+        .course-content { padding: 1.5rem; }
+        .course-title { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; }
+        .course-desc { color: #64748b; margin-bottom: 1rem; }
+        .course-meta { display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: #64748b; }
+        .course-meta i { color: #2563eb; }
+        .progress-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-fill { height: 100%; background: #10b981; transition: width 0.3s; }
+        .progress-text { font-size: 0.85rem; color: #64748b; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; width: 100%; justify-content: center; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .resource-list { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 2rem; }
+        .resource-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #f1f5f9; }
+        .resource-info { display: flex; align-items: center; gap: 1rem; }
+        .resource-icon { width: 40px; height: 40px; background: #dbeafe; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #2563eb; }
+        .badge { padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .badge-beginner { background: #d1fae5; color: #065f46; }
+        .badge-intermediate { background: #fef3c7; color: #92400e; }
+        .badge-advanced { background: #fee2e2; color: #991b1b; }
+        .report-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #f1f5f9; background: white; border-radius: 8px; margin-bottom: 1rem; }
+        .report-info { display: flex; align-items: center; gap: 1rem; }
+        .file-icon { width: 40px; height: 40px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #2563eb; }
+        .report-details h4 { font-size: 1rem; color: #1e293b; margin-bottom: 0.25rem; }
+        .report-details p { font-size: 0.85rem; color: #64748b; }
+        .download-btn { padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; }
+        .download-btn:hover { background: #1d4ed8; }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(0); }
+            .container { margin-left: 0; }
+            .mobile-menu-btn { display: flex !important; }
+        }
+        .mobile-menu-btn { display: none; position: fixed; bottom: 2rem; right: 2rem; width: 56px; height: 56px; background: #2563eb; color: white; border: none; border-radius: 50%; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); z-index: 999; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>SandBox Security</span>
+            </div>
+            <div class="subtitle">Phishing Simulation Platform</div>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a class="nav-link" href="dashboard.html">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="campaigns.html">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Campaigns</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="templates.html">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Email Templates</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="users.html">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Target Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="analytics.html">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="reports.html">
+                    <i class="fa-solid fa-file-code"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="training.html">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Training Materials</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="settings.html">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="email-settings.html"><i class="fa-solid fa-envelope"></i> <span>Email Config</span></a></li>
+
+        </ul>
+    </aside>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-title">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <h1>Training Materials</h1>
+            </div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('courses')">Training Courses</button>
+                <button class="tab" onclick="switchTab('resources')">Resources</button>
+                <button class="tab" onclick="switchTab('certifications')">Certifications</button>
+            </div>
+        </div>
+
+        <!-- Courses Tab -->
+        <div id="courses-content" class="tab-content active">
+            <div class="courses-grid" id="coursesList"></div>
+            <div class="coming-soon-overlay">
+                <div class="coming-soon-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="coming-soon-title">Coming Soon</div>
+                <div class="coming-soon-text">Training courses are being prepared</div>
+                <div class="coming-soon-subtitle">We're working hard to bring you comprehensive training materials. Check back soon!</div>
+            </div>
+        </div>
+
+        <!-- Resources Tab -->
+        <div id="resources-content" class="tab-content">
+            <div class="resource-list" id="resourcesList" style="filter: blur(4px); pointer-events: none;"></div>
+            <div class="coming-soon-overlay">
+                <div class="coming-soon-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="coming-soon-title">Coming Soon</div>
+                <div class="coming-soon-text">Resources are being prepared</div>
+                <div class="coming-soon-subtitle">We're curating valuable resources for you. Stay tuned!</div>
+            </div>
+        </div>
+
+        <!-- Certifications Tab -->
+        <div id="certifications-content" class="tab-content">
+            <div class="courses-grid" id="certificationsList"></div>
+            <div class="coming-soon-overlay">
+                <div class="coming-soon-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="coming-soon-title">Coming Soon</div>
+                <div class="coming-soon-text">Certifications are being prepared</div>
+                <div class="coming-soon-subtitle">Professional certifications will be available soon!</div>
+            </div>
+        </div>
+
+        <!-- Recent Reports Section 
+        <div class="header">
+            <div class="header-title">
+                <i class="fa-solid fa-file-chart"></i>
+                <h1>Recent Reports</h1>
+            </div>
+        </div>
+        <div class="tab-content">
+            <div class="report-list" id="recentReportsList"></div>
+        </div>
+    </div>-->
+
+    <script>
+        const resources = [
+            { name: 'Phishing Examples Database', type: 'PDF', size: '4.2 MB', icon: 'fa-file-pdf' },
+            { name: 'Security Awareness Poster Pack', type: 'ZIP', size: '12.8 MB', icon: 'fa-file-zipper' },
+            { name: 'Email Security Checklist', type: 'PDF', size: '856 KB', icon: 'fa-file-pdf' },
+            { name: 'Incident Response Guide', type: 'PDF', size: '2.1 MB', icon: 'fa-file-pdf' },
+            { name: 'Security Policy Templates', type: 'DOCX', size: '1.5 MB', icon: 'fa-file-word' }
+        ];
+
+        const generatedReports = [
+            { name: 'Phishing Simulation Report - Oct 2023', date: '2023-10-15', format: 'PDF', size: '2.3 MB' },
+            { name: 'User Awareness Assessment - Oct 2023', date: '2023-10-10', format: 'XLSX', size: '1.2 MB' }
+        ];
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + '-content').classList.add('active');
+        }
+
+        function renderResources() {
+            const list = document.getElementById('resourcesList');
+            list.innerHTML = resources.map(resource => `
+                <div class="resource-item">
+                    <div class="resource-info">
+                        <div class="resource-icon">
+                            <i class="fa-solid ${resource.icon}"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:600;color:#1e293b;">${resource.name}</div>
+                            <div style="font-size:0.85rem;color:#64748b;">${resource.type} • ${resource.size}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width: auto;" onclick="downloadResource('${resource.name}')">
+                        <i class="fa-solid fa-download"></i>
+                        Download
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderRecentReports() {
+            const list = document.getElementById('recentReportsList');
+            if (generatedReports.length === 0) {
+                list.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">No reports generated yet. Create one to get started!</p>';
+                return;
+            }
+            
+            list.innerHTML = generatedReports.map(report => `
+                <div class="report-item">
+                    <div class="report-info">
+                        <div class="file-icon">
+                            <i class="fa-solid fa-${report.format.toLowerCase() === 'pdf' ? 'file-pdf' : report.format.toLowerCase() === 'xlsx' ? 'file-excel' : report.format.toLowerCase() === 'csv' ? 'file-lines' : 'file'}"></i>
+                        </div>
+                        <div class="report-details">
+                            <h4>${report.name}</h4>
+                            <p>${report.date} • ${report.format} • ${report.size}</p>
+                        </div>
+                    </div>
+                    <button class="download-btn" onclick="downloadReport('${report.name}', '${report.format}')">
+                        <i class="fa-solid fa-download"></i>
+                        Download
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function downloadResource(name) {
+            alert(`Downloading: ${name}`);
+        }
+
+        function downloadReport(name, format) {
+            alert(`Downloading report: ${name}.${format.toLowerCase()}`);
+        }
+
+        renderResources();
+        renderRecentReports();
+    </script>
+</body>
+</html>
