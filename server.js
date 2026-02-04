@@ -979,7 +979,10 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 });
 
-app.listen(3000, () => {
+app.listen(3000, "52.66.208.172", () => {
     console.log("✅ Tracker running");
-    console.log("➡️  Dashboard: http://localhost:3000/dashboard.html");
+    console.log("➡️  Dashboard: http://52.66.208.172:3000/dashboard.html");
 });
+
+
+
